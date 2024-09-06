@@ -17,7 +17,8 @@ fs.ensureDirSync(tempDir);
 
 async function checkForUpdates() {
     try {
-        const { data: remotePackageJson } = await axios.get(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/package.json`);
+        const { data: fileData } = await axios.get(`https://api.github.com/repos/${repoOwner}/${repoName}/contents/package.json`);
+        const remotePackageJson = JSON.parse(Buffer.from(fileData.content, 'base64').toString('utf8'));
         const latestVersion = remotePackageJson.version;
 
         if (latestVersion === currentVersion) {
