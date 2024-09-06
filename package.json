@@ -13,8 +13,6 @@
     "adm-zip": "^0.5.16",
     "axios": "^1.7.7",
     "chalk": "^4.1.2",
-    "cli-box": "^6.0.10",
-    "cli-boxes": "^4.0.1",
     "fs-extra": "^11.2.0",
     "minecraft-protocol": "^1.47.0"
   }
