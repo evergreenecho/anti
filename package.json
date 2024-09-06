@@ -1,0 +1,18 @@
+{
+  "name": "anti",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "axios": "^1.7.7",
+    "fs-extra": "^11.2.0",
+    "minecraft-protocol": "^1.47.0"
+  }
+}
