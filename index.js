@@ -1,12 +1,12 @@
-const autoUpdater = require('./autoUpdater')
-
-autoUpdater.checkForUpdates()
-
+const autoUpdater = require('./autoUpdater');
 const fs = require('fs');
 const path = require('path');
 const mc = require('minecraft-protocol');
 const states = mc.states;
 const CommandHandler = require('./commandHandler');
+const chalk = require('chalk');
+
+autoUpdater.checkForUpdates();
 
 const configPath = path.join(__dirname, 'config.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -15,7 +15,7 @@ const srv = mc.createServer({
     'online-mode': false,
     port: 25566,
     keepAlive: false,
-    motd: `\u00A7c\u00A7lDank Proxy`,
+    motd: chalk.redBright.bold('Dank Proxy'),
     version: config.version
 });
 
@@ -29,6 +29,15 @@ fs.readdirSync(modulePath).forEach(file => {
         modules[moduleName] = module;
     }
 });
+
+console.log(chalk.redBright.bold('Dank Proxy v0.1\n'));
+console.log(chalk.redBright.bold('Modules:'));
+
+Object.keys(modules).forEach(moduleName => {
+    console.log(chalk.redBright.bold(`- ${moduleName}`));
+});
+
+console.log(chalk.greenBright(`\nIP: localhost:${config.port}`));
 
 srv.on('login', function (client) {
     const addr = client.socket.remoteAddress;

@@ -4,6 +4,7 @@ const axios = require('axios');
 const AdmZip = require('adm-zip');
 const os = require('os');
 const process = require('process');
+const chalk = require('chalk');
 
 const repoOwner = 'evergreenecho';
 const repoName = 'anti';
@@ -22,48 +23,50 @@ async function checkForUpdates() {
         const latestVersion = remotePackageJson.version;
 
         if (latestVersion === currentVersion) {
-            console.log('No updates available.');
+            console.log(chalk.yellowBright.bold('\nUpdates: You are on the latest version.'));
             return;
         }
 
-        console.log(`New version available: ${latestVersion}`);
+        console.log(chalk.yellow(`New version available: ${latestVersion}`));
         await downloadUpdate();
         await extractUpdate();
         await replaceFiles();
-        console.log('Update completed successfully. Please restart the server.');
+        console.log(chalk.green('Update completed successfully. Exiting process now.'));
+        process.exit(0);
     } catch (error) {
-        console.error('Error checking for updates:', error.message);
+        console.error(chalk.red('Error checking for updates:'), error.message);
+        process.exit(1);
     }
 }
 
 async function downloadUpdate() {
     try {
-        console.log('Downloading update...');
+        console.log(chalk.cyan('Downloading update...'));
         const zipballUrl = `https://github.com/${repoOwner}/${repoName}/archive/refs/heads/main.zip`;
         const response = await axios.get(zipballUrl, { responseType: 'arraybuffer' });
         fs.writeFileSync(zipPath, response.data);
-        console.log('Download complete.');
+        console.log(chalk.green('Download complete.'));
     } catch (error) {
-        console.error('Error downloading update:', error.message);
+        console.error(chalk.red('Error downloading update:'), error.message);
         throw error;
     }
 }
 
 async function extractUpdate() {
     try {
-        console.log('Extracting update...');
+        console.log(chalk.cyan('Extracting update...'));
         const zip = new AdmZip(zipPath);
         zip.extractAllTo(extractPath, true);
-        console.log('Extraction complete.');
+        console.log(chalk.green('Extraction complete.'));
     } catch (error) {
-        console.error('Error extracting update:', error.message);
+        console.error(chalk.red('Error extracting update:'), error.message);
         throw error;
     }
 }
 
 async function replaceFiles() {
     try {
-        console.log('Replacing files...');
+        console.log(chalk.cyan('Replacing files...'));
         
         const extractedDirs = fs.readdirSync(extractPath).filter(file => fs.statSync(path.join(extractPath, file)).isDirectory());
         if (extractedDirs.length !== 1) {
@@ -77,9 +80,9 @@ async function replaceFiles() {
             filter: (src) => !src.includes(`${path.sep}.git`),
         });
 
-        console.log('Files replaced successfully.');
+        console.log(chalk.green('Files replaced successfully.'));
     } catch (error) {
-        console.error('Error replacing files:', error.message);
+        console.error(chalk.red('Error replacing files:'), error.message);
         throw error;
     }
 }
