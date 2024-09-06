@@ -13,12 +13,10 @@ const tempDir = path.join(os.tmpdir(), 'proxy-updater');
 const zipPath = path.join(tempDir, 'update.zip');
 const extractPath = path.join(tempDir, 'extracted');
 
-// Ensure the temporary directory exists
 fs.ensureDirSync(tempDir);
 
 async function checkForUpdates() {
     try {
-        // Fetch the latest package.json from the repository
         const { data: remotePackageJson } = await axios.get(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/package.json`);
         const latestVersion = remotePackageJson.version;
 
@@ -40,7 +38,6 @@ async function checkForUpdates() {
 async function downloadUpdate() {
     try {
         console.log('Downloading update...');
-        // Use the repository ZIPball URL for downloading
         const zipballUrl = `https://github.com/${repoOwner}/${repoName}/archive/refs/heads/main.zip`;
         const response = await axios.get(zipballUrl, { responseType: 'arraybuffer' });
         fs.writeFileSync(zipPath, response.data);
@@ -66,17 +63,17 @@ async function extractUpdate() {
 async function replaceFiles() {
     try {
         console.log('Replacing files...');
-        const files = fs.readdirSync(extractPath);
+        
+        const extractedDirs = fs.readdirSync(extractPath).filter(file => fs.statSync(path.join(extractPath, file)).isDirectory());
+        if (extractedDirs.length !== 1) {
+            throw new Error('Expected exactly one top-level directory in the extracted ZIP archive.');
+        }
+        
+        const topLevelDir = extractedDirs[0];
+        const sourceDir = path.join(extractPath, topLevelDir);
 
-        files.forEach(file => {
-            const srcPath = path.join(extractPath, file);
-            const destPath = path.join(process.cwd(), file);
-
-            if (fs.existsSync(destPath)) {
-                fs.removeSync(destPath);
-            }
-
-            fs.moveSync(srcPath, destPath);
+        fs.copySync(sourceDir, process.cwd(), {
+            filter: (src) => !src.includes(`${path.sep}.git`),
         });
 
         console.log('Files replaced successfully.');
