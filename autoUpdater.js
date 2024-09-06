@@ -6,19 +6,21 @@ const os = require('os');
 const process = require('process');
 
 const repoOwner = 'evergreenecho';
-const repoName = 'DankProxy';
+const repoName = 'anti';
 const currentVersion = require('./package.json').version;
 
 const tempDir = path.join(os.tmpdir(), 'proxy-updater');
 const zipPath = path.join(tempDir, 'update.zip');
 const extractPath = path.join(tempDir, 'extracted');
 
+// Ensure the temporary directory exists
 fs.ensureDirSync(tempDir);
 
 async function checkForUpdates() {
     try {
-        const { data } = await axios.get(`https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`);
-        const latestVersion = data.tag_name;
+        // Fetch the latest package.json from the repository
+        const { data: remotePackageJson } = await axios.get(`https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/package.json`);
+        const latestVersion = remotePackageJson.version;
 
         if (latestVersion === currentVersion) {
             console.log('No updates available.');
@@ -26,7 +28,7 @@ async function checkForUpdates() {
         }
 
         console.log(`New version available: ${latestVersion}`);
-        await downloadUpdate(data.zipball_url);
+        await downloadUpdate();
         await extractUpdate();
         await replaceFiles();
         console.log('Update completed successfully. Please restart the server.');
@@ -35,10 +37,12 @@ async function checkForUpdates() {
     }
 }
 
-async function downloadUpdate(url) {
+async function downloadUpdate() {
     try {
         console.log('Downloading update...');
-        const response = await axios.get(url, { responseType: 'arraybuffer' });
+        // Use the repository ZIPball URL for downloading
+        const zipballUrl = `https://github.com/${repoOwner}/${repoName}/archive/refs/heads/main.zip`;
+        const response = await axios.get(zipballUrl, { responseType: 'arraybuffer' });
         fs.writeFileSync(zipPath, response.data);
         console.log('Download complete.');
     } catch (error) {

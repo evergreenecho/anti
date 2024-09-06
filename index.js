@@ -11,6 +11,8 @@ const CommandHandler = require('./commandHandler');
 const configPath = path.join(__dirname, 'config.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
+// this should disappear
+
 const srv = mc.createServer({
     'online-mode': false,
     port: 25566,
