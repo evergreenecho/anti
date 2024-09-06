@@ -15,7 +15,7 @@ const srv = mc.createServer({
     'online-mode': false,
     port: 25566,
     keepAlive: false,
-    motd: chalk.redBright.bold('Dank Proxy'),
+    motd: '§c§lDank Proxy v0.1',
     version: config.version
 });
 
@@ -41,26 +41,20 @@ console.log(chalk.greenBright(`\nIP: localhost:${config.port}`));
 
 srv.on('login', function (client) {
     const addr = client.socket.remoteAddress;
-    console.log('Incoming connection from', addr);
 
     let endedClient = false;
     let endedTargetClient = false;
 
     client.on('end', function () {
         endedClient = true;
-        console.log('Connection closed by client', addr);
         if (!endedTargetClient) {
-            console.log('Ending target client due to client closure');
             targetClient.end('End');
         }
     });
 
     client.on('error', function (err) {
         endedClient = true;
-        console.log('Connection error by client', addr);
-        console.log(err.stack);
         if (!endedTargetClient) {
-            console.log('Ending target client due to client error');
             targetClient.end('Error');
         }
     });
@@ -76,24 +70,19 @@ srv.on('login', function (client) {
     });
 
     targetClient.on('connect', () => {
-        console.log('Connected to target server', config.host + ':' + config.port);
+        console.log(chalk.greenBright('\nConnected to:', config.host + ':' + config.port));
     });
 
     targetClient.on('end', function () {
         endedTargetClient = true;
-        console.log('Connection closed by server', addr);
         if (!endedClient) {
-            console.log('Ending client due to server closure');
             client.end('End');
         }
     });
 
     targetClient.on('error', function (err) {
         endedTargetClient = true;
-        console.log('Connection error by server', addr, err);
-        console.log(err.stack);
         if (!endedClient) {
-            console.log('Ending client due to server error');
             client.end('Error');
         }
     });
@@ -111,6 +100,33 @@ srv.on('login', function (client) {
             }
         }
     });
+
+    client.on('window_click', (data) => {
+        if (data.windowId === 454567) {
+            const moduleName = Object.keys(modules)[data.slot];
+            if (moduleName) {
+                const module = modules[moduleName];
+                if (module.active) {
+                    if (module.onDisable) {
+                        module.onDisable(client, targetClient);
+                    }
+                    module.active = false;
+                    client.write('chat', {
+                        message: JSON.stringify({ text: `§cModule ${moduleName} deactivated.` })
+                    });
+                } else {
+                    if (module.onEnable) {
+                        module.onEnable(client, targetClient);
+                    }
+                    module.active = true;
+                    client.write('chat', {
+                        message: JSON.stringify({ text: `§aModule ${moduleName} activated.` })
+                    });
+                }
+            }
+        }
+    });
+
 
     targetClient.on('packet', function (data, meta) {
         if (meta.state === states.PLAY && client.state === states.PLAY) {
