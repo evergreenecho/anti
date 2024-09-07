@@ -101,32 +101,6 @@ srv.on('login', function (client) {
         }
     });
 
-    client.on('window_click', (data) => {
-        if (data.windowId === 454567) {
-            const moduleName = Object.keys(modules)[data.slot];
-            if (moduleName) {
-                const module = modules[moduleName];
-                if (module.active) {
-                    if (module.onDisable) {
-                        module.onDisable(client, targetClient);
-                    }
-                    module.active = false;
-                    client.write('chat', {
-                        message: JSON.stringify({ text: `§cModule ${moduleName} deactivated.` })
-                    });
-                } else {
-                    if (module.onEnable) {
-                        module.onEnable(client, targetClient);
-                    }
-                    module.active = true;
-                    client.write('chat', {
-                        message: JSON.stringify({ text: `§aModule ${moduleName} activated.` })
-                    });
-                }
-            }
-        }
-    });
-
 
     targetClient.on('packet', function (data, meta) {
         if (meta.state === states.PLAY && client.state === states.PLAY) {
