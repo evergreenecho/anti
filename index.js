@@ -14,6 +14,30 @@ autoUpdater.checkForUpdates();
 const configPath = path.join(__dirname, 'config.json');
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
+function validateConfig(config) {
+    const requiredFields = ['host', 'version', 'username', 'auth'];
+
+    for (const field of requiredFields) {
+        const value = config[field];
+        if (typeof value !== 'string' || value.trim() === '') {
+            return `[CONFIG] '${field}' is required and cannot be empty.`;
+        }
+    }
+
+    if (typeof config.port !== 'number' || isNaN(config.port)) {
+        return "[CONFIG] 'port' must be a valid number.";
+    }
+
+    return true;
+}
+
+const validationResult = validateConfig(config);
+
+if (validationResult !== true) {
+    console.log(chalk.redBright.bold(validationResult));
+    process.exit(1);
+}
+
 const srv = mc.createServer({
     'online-mode': false,
     port: 25566,
