@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dank Proxy Web Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans">
+    <div class="container mx-auto p-8">
+        <h1 class="text-4xl font-extrabold mb-8 text-center text-gray-50">Dank Proxy Web Panel</h1>
+        <div id="module-list" class="space-y-6">
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        function updateModuleList(modules) {
+            const moduleList = document.getElementById('module-list');
+            moduleList.innerHTML = '';
+
+            if (Object.keys(modules).length === 0) {
+                moduleList.innerHTML = '<p class="text-center text-gray-500">No active Minecraft connection found. Please connect to the server to manage modules.</p>';
+                return;
+            }
+
+            Object.keys(modules).forEach(moduleName => {
+                const status = modules[moduleName];
+                const moduleDiv = document.createElement('div');
+                moduleDiv.className = 'bg-gray-800 shadow-lg rounded-lg p-6 flex justify-between items-center hover:bg-gray-700 transition-colors';
+                moduleDiv.innerHTML = `
+                    <div>
+                        <strong class="text-xl font-semibold">${moduleName}</strong>
+                        <span class="text-sm text-gray-400">${status}</span>
+                    </div>
+                    <button onclick="toggleModule('${moduleName}')" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500">
+                        ${status === 'Active' ? 'Deactivate' : 'Activate'}
+                    </button>
+                `;
+                moduleList.appendChild(moduleDiv);
+            });
+        }
+
+        socket.on('moduleList', (modules) => {
+            updateModuleList(modules);
+        });
+
+        function toggleModule(moduleName) {
+            socket.emit('toggleModule', moduleName);
+        }
+    </script>
+</body>
+</html>

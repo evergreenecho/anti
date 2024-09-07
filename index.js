@@ -2,6 +2,9 @@ const autoUpdater = require('./autoUpdater');
 const fs = require('fs');
 const path = require('path');
 const mc = require('minecraft-protocol');
+const express = require('express');
+const http = require('http');
+const socketio = require('socket.io');
 const states = mc.states;
 const CommandHandler = require('./commandHandler');
 const chalk = require('chalk');
@@ -39,27 +42,17 @@ Object.keys(modules).forEach(moduleName => {
 
 console.log(chalk.greenBright(`\nIP: localhost:${config.port}`));
 
+let activeClient = null;
+let activeTargetClient = null;
+let isOnServer = false;
+
 srv.on('login', function (client) {
-    const addr = client.socket.remoteAddress;
+    activeClient = client;
 
     let endedClient = false;
     let endedTargetClient = false;
 
-    client.on('end', function () {
-        endedClient = true;
-        if (!endedTargetClient) {
-            targetClient.end('End');
-        }
-    });
-
-    client.on('error', function (err) {
-        endedClient = true;
-        if (!endedTargetClient) {
-            targetClient.end('Error');
-        }
-    });
-
-    const targetClient = mc.createClient({
+    activeTargetClient = mc.createClient({
         host: config.host,
         port: config.port,
         username: config.username,
@@ -69,46 +62,60 @@ srv.on('login', function (client) {
         version: config.version
     });
 
-    targetClient.on('connect', () => {
-        console.log(chalk.greenBright('\nConnected to:', config.host + ':' + config.port));
-    });
-
-    targetClient.on('end', function () {
-        endedTargetClient = true;
-        if (!endedClient) {
-            client.end('End');
+    client.on('end', function () {
+        endedClient = true;
+        isOnServer = false;
+        if (!endedTargetClient) {
+            activeTargetClient.end('End');
         }
     });
 
-    targetClient.on('error', function (err) {
-        endedTargetClient = true;
-        if (!endedClient) {
-            client.end('Error');
+    client.on('error', function (err) {
+        endedClient = true;
+        isOnServer = false;
+        if (!endedTargetClient) {
+            activeTargetClient.end('Error');
         }
     });
 
-    const commandHandler = new CommandHandler(modules, client, targetClient);
+    activeTargetClient.on('end', function () {
+        endedTargetClient = true;
+        isOnServer = false;
+        if (!endedClient) {
+            activeClient.end('End');
+        }
+    });
+
+    activeTargetClient.on('error', function (err) {
+        endedTargetClient = true;
+        isOnServer = false;
+        if (!endedClient) {
+            activeClient.end('Error');
+        }
+    });
+
+    const commandHandler = new CommandHandler(modules, client, activeTargetClient);
 
     client.on('packet', function (data, meta) {
         if (meta.name === 'chat' && commandHandler.handleCommand(data.message)) {
             return;
         }
 
-        if (targetClient.state === states.PLAY && meta.state === states.PLAY) {
+        if (activeTargetClient.state === states.PLAY && meta.state === states.PLAY) {
             if (!endedTargetClient) {
-                targetClient.write(meta.name, data);
+                activeTargetClient.write(meta.name, data);
             }
         }
     });
 
-
-    targetClient.on('packet', function (data, meta) {
+    activeTargetClient.on('packet', function (data, meta) {
         if (meta.state === states.PLAY && client.state === states.PLAY) {
             if (!endedClient) {
                 client.write(meta.name, data);
 
                 if (meta.name === 'login') {
                     client.entityId = data.entityId;
+                    isOnServer = true;
                 }
 
                 if (meta.name === 'set_compression') {
@@ -119,6 +126,46 @@ srv.on('login', function (client) {
     });
 
     Object.values(modules).forEach(mod => {
-        if (mod.active && mod.onEnable) mod.onEnable(client, targetClient);
+        if (mod.active && mod.onEnable) mod.onEnable(client, activeTargetClient);
     });
+});
+
+const app = express();
+const server = http.createServer(app);
+const io = socketio(server);
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+io.on('connection', (socket) => {
+    if (isOnServer) {
+        socket.emit('moduleList', getModuleStatuses());
+    } else {
+        socket.emit('moduleList', {});
+    }
+
+    socket.on('toggleModule', (moduleName) => {
+        if (activeClient && activeTargetClient && isOnServer) {
+            const module = modules[moduleName];
+            if (module) {
+                const commandHandler = new CommandHandler(modules, activeClient, activeTargetClient);
+                commandHandler.toggleModule(moduleName, []);
+
+                io.emit('moduleList', getModuleStatuses());
+            } else {
+                console.log('Module not found:', moduleName);
+            }
+        }
+    });
+});
+
+function getModuleStatuses() {
+    const statuses = {};
+    Object.keys(modules).forEach(moduleName => {
+        statuses[moduleName] = modules[moduleName].active ? 'Active' : 'Inactive';
+    });
+    return statuses;
+}
+
+server.listen(3000, () => {
+    console.log(chalk.yellowBright.bold('\nWeb panel listening on port 3000'));
 });

@@ -28,6 +28,15 @@ async function checkForUpdates() {
         }
 
         console.log(chalk.yellow(`New version available: ${latestVersion}`));
+
+        if (remotePackageJson.update_changelog && remotePackageJson.update_changelog.length > 0) {
+            console.log(chalk.cyan('\nChangelog:'));
+            console.log(chalk.cyan(`Version ${latestVersion}:`));
+            remotePackageJson.update_changelog.forEach((item, index) => {
+                console.log(chalk.cyan(`- ${item}`));
+            });
+        }
+
         await downloadUpdate();
         await extractUpdate();
         await replaceFiles();
