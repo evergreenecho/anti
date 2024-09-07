@@ -30,11 +30,11 @@ async function checkForUpdates() {
         console.log(chalk.yellow(`New version available: ${latestVersion}`));
 
         if (remotePackageJson.update_changelog && remotePackageJson.update_changelog.length > 0) {
-            console.log(chalk.cyan('\nChangelog:'));
-            console.log(chalk.cyan(`Version ${latestVersion}:`));
+            console.log(chalk.cyan(`\nChangelog (${latestVersion}):`));
             remotePackageJson.update_changelog.forEach((item, index) => {
                 console.log(chalk.cyan(`- ${item}`));
             });
+            console.log('\n')
         }
 
         await downloadUpdate();
@@ -54,7 +54,6 @@ async function downloadUpdate() {
         const zipballUrl = `https://github.com/${repoOwner}/${repoName}/archive/refs/heads/main.zip`;
         const response = await axios.get(zipballUrl, { responseType: 'arraybuffer' });
         fs.writeFileSync(zipPath, response.data);
-        console.log(chalk.green('Download complete.'));
     } catch (error) {
         console.error(chalk.red('Error downloading update:'), error.message);
         throw error;
@@ -63,10 +62,8 @@ async function downloadUpdate() {
 
 async function extractUpdate() {
     try {
-        console.log(chalk.cyan('Extracting update...'));
         const zip = new AdmZip(zipPath);
         zip.extractAllTo(extractPath, true);
-        console.log(chalk.green('Extraction complete.'));
     } catch (error) {
         console.error(chalk.red('Error extracting update:'), error.message);
         throw error;
@@ -74,9 +71,7 @@ async function extractUpdate() {
 }
 
 async function replaceFiles() {
-    try {
-        console.log(chalk.cyan('Replacing files...'));
-        
+    try {        
         const extractedDirs = fs.readdirSync(extractPath).filter(file => fs.statSync(path.join(extractPath, file)).isDirectory());
         if (extractedDirs.length !== 1) {
             throw new Error('Expected exactly one top-level directory in the extracted ZIP archive.');
@@ -89,7 +84,6 @@ async function replaceFiles() {
             filter: (src) => !src.includes(`${path.sep}.git`),
         });
 
-        console.log(chalk.green('Files replaced successfully.'));
     } catch (error) {
         console.error(chalk.red('Error replacing files:'), error.message);
         throw error;
