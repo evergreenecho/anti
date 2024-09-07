@@ -27,7 +27,7 @@ async function checkForUpdates() {
             return;
         }
 
-        console.log(chalk.yellow(`\nNew version available: ${latestVersion}`));
+        console.log(chalk.yellow(`New version available: ${latestVersion}`));
 
         if (remotePackageJson.update_changelog && remotePackageJson.update_changelog.length > 0) {
             console.log(chalk.cyan(`\nChangelog (${latestVersion}):`));
