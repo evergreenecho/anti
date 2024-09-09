@@ -1,3 +1,14 @@
+const fs = require('fs');
+const path = require('path');
+const settingsPath = path.join(__dirname, 'settings.json');
+
+let settings;
+if (fs.existsSync(settingsPath)) {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+} else {
+    settings = {};
+}
+
 class CommandHandler {
     constructor(modules, client, targetClient) {
         this.modules = modules;
@@ -7,8 +18,18 @@ class CommandHandler {
             {
                 name: "help",
                 description: "Shows this message"
+            },
+            {
+                name: "settings",
+                description: "Modify module settings"
             }
         ];
+
+        Object.keys(this.modules).forEach(moduleName => {
+            if (!settings[moduleName]) {
+                settings[moduleName] = {};
+            }
+        });
     }
 
     handleCommand(message) {
@@ -33,6 +54,19 @@ class CommandHandler {
                 });
             }
             return true;
+        } else if (command === 'settings' && moduleName) {
+            const moduleSetting = args[2];
+            const settingValue = args[3];
+            if (this.modifyModuleSettings(moduleName, moduleSetting, settingValue)) {
+                this.client.write('chat', {
+                    message: JSON.stringify({ text: `§aSettings updated for ${moduleName}.` })
+                });
+            } else {
+                this.client.write('chat', {
+                    message: JSON.stringify({ text: '§cInvalid setting or value.' })
+                });
+            }
+            return true;
         } else {
             this.client.write('chat', {
                 message: JSON.stringify({ text: '§cUnknown command or module.' })
@@ -40,6 +74,29 @@ class CommandHandler {
         }
 
         return true;
+    }
+
+    modifyModuleSettings(moduleName, setting, value) {
+        const module = this.modules[moduleName];
+        if (!module || !settings[moduleName]) return false;
+
+        if (moduleName === 'misplace') {
+            if (setting === 'blocks') {
+                const floatValue = parseFloat(value);
+                if (!isNaN(floatValue) && floatValue >= 0.1 && floatValue <= 3) {
+                    settings[moduleName].blocks = floatValue;
+                    module.setMisplaceBlocks(floatValue);
+                    this.saveSettings();
+                    return true;
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+
+    saveSettings() {
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
     }
 
     sendHelpMessage() {

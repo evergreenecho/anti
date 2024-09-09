@@ -40,7 +40,7 @@ if (validationResult !== true) {
 
 const srv = mc.createServer({
     'online-mode': false,
-    port: 25566,
+    port: config.port,
     keepAlive: false,
     motd: '§c§lDank Proxy v0.1',
     version: config.version
@@ -72,6 +72,8 @@ let isOnServer = false;
 
 srv.on('login', function (client) {
     activeClient = client;
+    //client->server modifiers
+    client.packetModifiers = new Set();
 
     let endedClient = false;
     let endedTargetClient = false;
@@ -85,6 +87,8 @@ srv.on('login', function (client) {
         keepAlive: false,
         version: config.version
     });
+    //server->client modifiers
+    activeTargetClient.packetModifiers = new Set();
 
     client.on('end', function () {
         endedClient = true;
@@ -127,7 +131,18 @@ srv.on('login', function (client) {
 
         if (activeTargetClient.state === states.PLAY && meta.state === states.PLAY) {
             if (!endedTargetClient) {
-                activeTargetClient.write(meta.name, data);
+                let isCancelled = false;
+                for (let fn of client.packetModifiers.values()) {
+                    let returnVal = fn(data, meta);
+                    if (returnVal === false) {
+                        isCancelled = true;
+                        break;
+                    }
+                    if (returnVal) {
+                        data = returnVal;
+                    }
+                }
+                if (!isCancelled) activeTargetClient.write(meta.name, data);
             }
         }
     });
@@ -135,7 +150,18 @@ srv.on('login', function (client) {
     activeTargetClient.on('packet', function (data, meta) {
         if (meta.state === states.PLAY && client.state === states.PLAY) {
             if (!endedClient) {
-                client.write(meta.name, data);
+                let isCancelled = false;
+                for (let fn of activeTargetClient.packetModifiers.values()) {
+                    let returnVal = fn(data, meta);
+                    if (returnVal === false) {
+                        isCancelled = true;
+                        break;
+                    }
+                    if (returnVal) {
+                        data = returnVal;
+                    }
+                }
+                if (!isCancelled) client.write(meta.name, data);
 
                 if (meta.name === 'login') {
                     client.entityId = data.entityId;
@@ -149,10 +175,19 @@ srv.on('login', function (client) {
         }
     });
 
+    //use .once instead of .on here because proxies like bungeecord send login when switching backend servers
+    activeTargetClient.once('login', function() {
+        Object.values(modules).forEach(mod => {
+            if (mod.onConnect) mod.onConnect(client, activeTargetClient);
+        });
+    })
+
     Object.values(modules).forEach(mod => {
         if (mod.active && mod.onEnable) mod.onEnable(client, activeTargetClient);
     });
 });
+
+// Web panel code below
 
 const app = express();
 const server = http.createServer(app);
