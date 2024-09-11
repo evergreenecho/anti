@@ -75,15 +75,17 @@ module.exports = {
             // if on dankprison and you have TMD rank, it automatically throws rod back in
             // so we only need one rod throw, change i < 2 to i < 1
             for (let i = 0; i < 2; i++) {
-                targetClient.write('block_place', {
-                    location: { x: -1, y: -1, z: -1 },
-                    direction: -1,
-                    heldItem: this.myFloat.fishedItem,
-                    cursorX: 0,
-                    cursorY: 0,
-                    cursorZ: 0
-                });
-                targetClient.write('arm_animation', {});
+                setTimeout(() => {
+                    targetClient.write('block_place', {
+                        location: { x: -1, y: -1, z: -1 },
+                        direction: -1,
+                        heldItem: this.myFloat.fishedItem,
+                        cursorX: 0,
+                        cursorY: 0,
+                        cursorZ: 0
+                    });
+                    targetClient.write('arm_animation', {});
+                }, Math.random() * (500 - 200) + 200);
             }
         });
         client.on('held_item_slot', data => {
