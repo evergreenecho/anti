@@ -26,7 +26,21 @@ module.exports = {
             if (this.active) this.shouldThrowRod = false;
         })
         targetClient.on('close_window', data => {
-            if (this.active && !this.shouldThrowRod) this.shouldThrowRod = true;
+            targetClient.on('close_window', data => {
+                if (this.active) {
+                    this.shouldThrowRod = true;
+                    // You may also need to trigger a block place event here to resume fishing
+                    targetClient.write('block_place', {
+                        location: { x: -1, y: -1, z: -1 },
+                        direction: -1,
+                        heldItem: this.myFloat?.fishedItem || this.lastRodItem, // use the last rod item
+                        cursorX: 0,
+                        cursorY: 0,
+                        cursorZ: 0
+                    });
+                    targetClient.write('arm_animation', {});
+                }
+            });
         })
         targetClient.on('spawn_entity', data => {
             if (data.type !== 90) return; //not fishing float

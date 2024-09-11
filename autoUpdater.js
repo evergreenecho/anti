@@ -34,7 +34,7 @@ async function checkForUpdates() {
             remotePackageJson.update_changelog.forEach((item, index) => {
                 console.log(chalk.cyan(`- ${item}`));
             });
-            console.log('\n')
+            console.log('\n');
         }
 
         await downloadUpdate();
@@ -81,7 +81,11 @@ async function replaceFiles() {
         const sourceDir = path.join(extractPath, topLevelDir);
 
         fs.copySync(sourceDir, process.cwd(), {
-            filter: (src) => !src.includes(`${path.sep}.git`),
+            filter: (src) => {
+                const relativePath = path.relative(sourceDir, src);
+                // Exclude config.json
+                return !relativePath.includes('config.json') && !relativePath.includes(`${path.sep}.git`);
+            },
         });
 
     } catch (error) {
