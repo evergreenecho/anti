@@ -1,11 +1,10 @@
 {
   "name": "anti",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "",
   "update_changelog": [
-    "Added autofish",
-    "Added blink",
-    "Added nofall"
+    "Added antiinvis",
+    "Temporarily removed web panel"
   ],
   "main": "index.js",
   "scripts": {
@@ -18,9 +17,7 @@
     "adm-zip": "^0.5.16",
     "axios": "^1.7.7",
     "chalk": "^4.1.2",
-    "express": "^4.19.2",
     "fs-extra": "^11.2.0",
-    "minecraft-protocol": "^1.47.0",
-    "socket.io": "^4.7.5"
+    "minecraft-protocol": "^1.47.0"
   }
 }

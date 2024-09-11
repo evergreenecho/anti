@@ -2,9 +2,6 @@ const autoUpdater = require('./autoUpdater');
 const fs = require('fs');
 const path = require('path');
 const mc = require('minecraft-protocol');
-const express = require('express');
-const http = require('http');
-const socketio = require('socket.io');
 const states = mc.states;
 const CommandHandler = require('./commandHandler');
 const chalk = require('chalk');
@@ -187,46 +184,4 @@ srv.on('login', function (client) {
     Object.values(modules).forEach(mod => {
         if (mod.active && mod.onEnable) mod.onEnable(client, activeTargetClient);
     });
-});
-
-// Web panel code below
-
-const app = express();
-const server = http.createServer(app);
-const io = socketio(server);
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-io.on('connection', (socket) => {
-    if (isOnServer) {
-        socket.emit('moduleList', getModuleStatuses());
-    } else {
-        socket.emit('moduleList', {});
-    }
-
-    socket.on('toggleModule', (moduleName) => {
-        if (activeClient && activeTargetClient && isOnServer) {
-            const module = modules[moduleName];
-            if (module) {
-                const commandHandler = new CommandHandler(modules, activeClient, activeTargetClient);
-                commandHandler.toggleModule(moduleName, []);
-
-                io.emit('moduleList', getModuleStatuses());
-            } else {
-                console.log('Module not found:', moduleName);
-            }
-        }
-    });
-});
-
-function getModuleStatuses() {
-    const statuses = {};
-    Object.keys(modules).forEach(moduleName => {
-        statuses[moduleName] = modules[moduleName].active ? 'Active' : 'Inactive';
-    });
-    return statuses;
-}
-
-server.listen(3000, () => {
-    console.log(chalk.yellowBright.bold('\nWeb panel listening on port 3000'));
 });
