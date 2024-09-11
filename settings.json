@@ -4,5 +4,8 @@
   },
   "afb": {},
   "fly": {},
-  "velocity": {}
+  "velocity": {},
+  "autofish": {},
+  "blink": {},
+  "nofall": {}
 }

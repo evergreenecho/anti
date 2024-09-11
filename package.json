@@ -3,8 +3,9 @@
   "version": "0.1.4",
   "description": "",
   "update_changelog": [
-    "Added Misplace",
-    "Added Settings System"
+    "Added autofish",
+    "Added blink",
+    "Added nofall"
   ],
   "main": "index.js",
   "scripts": {

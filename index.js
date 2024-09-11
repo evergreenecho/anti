@@ -39,7 +39,7 @@ if (validationResult !== true) {
 }
 
 const srv = mc.createServer({
-    'online-mode': false,
+    'online-mode': true,
     port: config.port,
     keepAlive: false,
     motd: '§c§lDank Proxy v0.1',
@@ -80,7 +80,7 @@ srv.on('login', function (client) {
 
     activeTargetClient = mc.createClient({
         host: config.host,
-        port: config.port,
+        port: "25565",
         username: config.username,
         password: config.password,
         auth: config.auth,
@@ -101,6 +101,7 @@ srv.on('login', function (client) {
     client.on('error', function (err) {
         endedClient = true;
         isOnServer = false;
+        console.log(err)
         if (!endedTargetClient) {
             activeTargetClient.end('Error');
         }
@@ -117,6 +118,7 @@ srv.on('login', function (client) {
     activeTargetClient.on('error', function (err) {
         endedTargetClient = true;
         isOnServer = false;
+        console.log(err)
         if (!endedClient) {
             activeClient.end('Error');
         }
